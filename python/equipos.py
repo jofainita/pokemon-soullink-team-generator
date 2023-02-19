@@ -2,6 +2,9 @@ from itertools import combinations
 from itertools import permutations
 import numpy as np
 import pandas as pd 
+import sqlite3
+from sqlite3 import Error as sqlite3Error
+import json
    
 def sacar_combinaciones(tipos):
     # combinaciones = pd.DataFrame(columns=['Tipo1','Tipo2','num','compatibles'])
@@ -19,7 +22,7 @@ def sacar_combinaciones(tipos):
         combinaciones_compatibles = combinaciones_compatibles[combinaciones_compatibles['Tipo2'] != combinaciones['Tipo2'][i]].copy()
         combinaciones['compatibles'][i] = combinaciones_compatibles['num'].tolist()
         combinaciones_not_compatibles = np.setdiff1d(combinaciones['num'].tolist(), combinaciones['compatibles'][i])
-        combinaciones['incompatibles'][i] = combinaciones_not_compatibles.tolist()
+        combinaciones['incompatibles'][i] = combinaciones_not_compatibles.tolist().copy()
     return combinaciones
 
 def common_elements(list1, list2):
@@ -98,9 +101,68 @@ def sacar_todas_combinaciones(combinaciones, todas_combinaciones):
         iterador += 1
     return todas_combinaciones
 
+def connect_to_db():
+    try:
+        conn = sqlite3.connect('pokemon-soullink-team-generator/PokeTeamViewer/poke_database.db')
+    except sqlite3Error as e:
+        print(e)
+    return conn
+
+def create_tables(conn):
+    table1 = """ CREATE TABLE IF NOT EXISTS Datos_base (
+                                        id integer PRIMARY KEY,
+                                        Ruta text NOT NULL,
+                                        Pokemon_1 text NOT NULL,
+                                        Mote_1 text NOT NULL,
+                                        Tipo_1 text NOT NULL,
+                                        Pokemon_2 text NOT NULL,
+                                        Mote_2 text NOT NULL,
+                                        Tipo_2 text NOT NULL,
+                                        Id_Tipo integer NOT NULL
+                                        ); """
+    
+    table2 = """ CREATE TABLE IF NOT EXISTS Asociacion_tipos (
+                                        id integer PRIMARY KEY,
+                                        Tipo_1 text NOT NULL,
+                                        Tipo_2 text NOT NULL,
+                                        Id_Tipo integer NOT NULL); """
+    
+    table3 = """ CREATE TABLE IF NOT EXISTS Posibles_combinaciones (
+                                        id integer PRIMARY KEY,
+                                        Combinacion text NOT NULL,
+                                        Cantidad integer NOT NULL); """
+    try:
+        c = conn.cursor()
+        c.execute(table1)
+        c.execute(table2)
+        c.execute(table3)
+    except sqlite3Error as e:
+        print(e)
+
+def fill_tables(conn, pokimones, tipos, combinaciones):
+    sql1 = """ INSERT INTO Datos_base (Ruta, Pokemon_1, Mote_1, Tipo_1, Pokemon_2, Mote_2, Tipo_2, Id_Tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?) """
+    sql2 = """ INSERT INTO Asociacion_tipos (Tipo_1, Tipo_2, Id_Tipo) VALUES (?, ?, ?) """
+    sql3 = """ INSERT INTO Posibles_combinaciones (Combinacion, Cantidad) VALUES (?, ?) """
+    try:
+        c = conn.cursor()
+        for i in range (len(pokimones)):
+            c.execute(sql1, (pokimones['Localizacion'][i], pokimones['Pokemon_'][i], pokimones['Mote_'][i], pokimones['Tipo_'][i], pokimones['Pokemon'][i], pokimones['Mote'][i], pokimones['Tipo'][i], int(pokimones['id_tipo'][i])))
+        for i in range (len(tipos)):
+            # c.execute(sql2, (tipos['Tipo1'][i], tipos['Tipo2'][i], int(tipos['num'][i])))
+            c.execute(sql2, (tipos['Tipo1'][i], tipos['Tipo2'][i], tipos['num'][i]))
+        for i in range (len(combinaciones)):
+            list_element = combinaciones[i]
+            tamanyo = len(list_element)
+            meter = json.dumps(list(map(int, list_element)))
+            c.execute(sql3, (meter, tamanyo))
+        conn.commit()
+        
+    except sqlite3Error as e:
+        print(e)
 
 def main():
-    pokimones = pd.read_table('Bocatacas.tsv')
+    conn = None # conexion a la base de datos
+    pokimones = pd.read_table('pokemon-soullink-team-generator/python/src/Bocatacas.tsv')
     entrenador1 = pd.DataFrame(columns=['Ruta','Pokemon','Tipo'])
     entrenador2 = pd.DataFrame(columns=['Ruta','Pokemon','Tipo']) 
     entrenador1[['Ruta','Pokemon','Tipo']] = pokimones[['Localizacion', 'Pokemon_', 'Tipo_']].copy()
@@ -109,15 +171,21 @@ def main():
     tipos['Tipo1']= entrenador1['Tipo'].copy()
     tipos['Tipo2']= entrenador2['Tipo'].copy()
     tipos = tipos[tipos['Tipo1'] != tipos['Tipo2']]
+    pokimones = pokimones[pokimones['Tipo_'] != pokimones['Tipo']]
+    pokimones = pokimones.reset_index(drop=True)
     tipos = tipos.reset_index(drop=True)
     tipos = sacar_tipos(tipos)
+    pokimones['id_tipo'] = tipos['num'].copy()
     combinaciones = sacar_combinaciones(tipos)
     todas_combinaciones = []
     todas_combinaciones = sacar_todas_combinaciones(combinaciones, todas_combinaciones)
-    for i in todas_combinaciones:
-        print (i)
+    # for i in todas_combinaciones:
+    #     print (i)
     todas_combinaciones_df = pd.DataFrame(todas_combinaciones)
-    todas_combinaciones_df.to_excel('todas_combinaciones.xlsx')
+    todas_combinaciones_df.to_excel('pokemon-soullink-team-generator/python/output/todas_combinaciones.xlsx')
+    conn = connect_to_db()
+    create_tables(conn)
+    fill_tables(conn, pokimones, tipos, todas_combinaciones)
     
 
 if __name__ == "__main__":
