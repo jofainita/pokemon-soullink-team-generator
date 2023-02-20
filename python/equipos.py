@@ -103,7 +103,7 @@ def sacar_todas_combinaciones(combinaciones, todas_combinaciones):
 
 def connect_to_db():
     try:
-        conn = sqlite3.connect('pokemon-soullink-team-generator/PokeTeamViewer/poke_database.db')
+        conn = sqlite3.connect('/home/jofa/Documents/pokimones/pokemon-soullink-team-generator/PokeTeamViewer/poke_database.db')
     except sqlite3Error as e:
         print(e)
     return conn
@@ -131,30 +131,39 @@ def create_tables(conn):
                                         id integer PRIMARY KEY,
                                         Combinacion text NOT NULL,
                                         Cantidad integer NOT NULL); """
+    table4 = """ CREATE TABLE IF NOT EXISTS Incompatible (
+                                        id integer PRIMARY KEY,
+                                        Tipo integer NOT NULL,
+                                        incompatibles text NOT NULL); """
     try:
         c = conn.cursor()
         c.execute(table1)
         c.execute(table2)
         c.execute(table3)
+        c.execute(table4)
     except sqlite3Error as e:
         print(e)
 
-def fill_tables(conn, pokimones, tipos, combinaciones):
+def fill_tables(conn, pokimones, tipos, todas_combinaciones, combinaciones):
     sql1 = """ INSERT INTO Datos_base (Ruta, Pokemon_1, Mote_1, Tipo_1, Pokemon_2, Mote_2, Tipo_2, Id_Tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?) """
     sql2 = """ INSERT INTO Asociacion_tipos (Tipo_1, Tipo_2, Id_Tipo) VALUES (?, ?, ?) """
     sql3 = """ INSERT INTO Posibles_combinaciones (Combinacion, Cantidad) VALUES (?, ?) """
+    sql4 = """ INSERT INTO Incompatible (Tipo, incompatibles) VALUES (?, ?) """
     try:
         c = conn.cursor()
         for i in range (len(pokimones)):
             c.execute(sql1, (pokimones['Localizacion'][i], pokimones['Pokemon_'][i], pokimones['Mote_'][i], pokimones['Tipo_'][i], pokimones['Pokemon'][i], pokimones['Mote'][i], pokimones['Tipo'][i], int(pokimones['id_tipo'][i])))
         for i in range (len(tipos)):
-            # c.execute(sql2, (tipos['Tipo1'][i], tipos['Tipo2'][i], int(tipos['num'][i])))
-            c.execute(sql2, (tipos['Tipo1'][i], tipos['Tipo2'][i], tipos['num'][i]))
-        for i in range (len(combinaciones)):
-            list_element = combinaciones[i]
+            c.execute(sql2, (tipos['Tipo1'][i], tipos['Tipo2'][i], int(tipos['num'][i])))
+        for i in range (len( todas_combinaciones)):
+            list_element =  todas_combinaciones[i]
             tamanyo = len(list_element)
             meter = json.dumps(list(map(int, list_element)))
             c.execute(sql3, (meter, tamanyo))
+        for i in range (len(combinaciones)):
+            list_element =  combinaciones['incompatibles'][i]
+            meter = json.dumps(list(map(int, list_element)))
+            c.execute(sql4, (int(combinaciones['num'][i]), meter))
         conn.commit()
         
     except sqlite3Error as e:
@@ -162,7 +171,7 @@ def fill_tables(conn, pokimones, tipos, combinaciones):
 
 def main():
     conn = None # conexion a la base de datos
-    pokimones = pd.read_table('pokemon-soullink-team-generator/python/src/Bocatacas.tsv')
+    pokimones = pd.read_table('/home/jofa/Documents/pokimones/pokemon-soullink-team-generator/python/src/Bocatacas.tsv')
     entrenador1 = pd.DataFrame(columns=['Ruta','Pokemon','Tipo'])
     entrenador2 = pd.DataFrame(columns=['Ruta','Pokemon','Tipo']) 
     entrenador1[['Ruta','Pokemon','Tipo']] = pokimones[['Localizacion', 'Pokemon_', 'Tipo_']].copy()
@@ -182,10 +191,10 @@ def main():
     # for i in todas_combinaciones:
     #     print (i)
     todas_combinaciones_df = pd.DataFrame(todas_combinaciones)
-    todas_combinaciones_df.to_excel('pokemon-soullink-team-generator/python/output/todas_combinaciones.xlsx')
+    todas_combinaciones_df.to_excel('/home/jofa/Documents/pokimones/pokemon-soullink-team-generator/python/output/todas_combinaciones.xlsx')
     conn = connect_to_db()
     create_tables(conn)
-    fill_tables(conn, pokimones, tipos, todas_combinaciones)
+    fill_tables(conn, pokimones, tipos, todas_combinaciones, combinaciones)
     
 
 if __name__ == "__main__":
