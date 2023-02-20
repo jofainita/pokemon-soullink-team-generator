@@ -60,3 +60,15 @@ app.get(config.main.base+'/incompatibles/:tipo', async (req, res) => {
     }
 });
 
+// sacarel mote, el nombre dado un id
+app.get(config.main.base+'/datosEquipo/:id', async (req, res) => {
+    try{
+        let elements_query = await knex('Datos_base').select("Pokemon_1","Mote_1","Pokemon_2","Mote_2").where('id',req.params.id);
+        res.status(200).send({result: elements_query, error: null});
+    }catch(err){
+        console.log(err);
+        res.status(500).json({result: none ,error: err.message});
+    }
+});
+
+

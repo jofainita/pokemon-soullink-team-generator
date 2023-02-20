@@ -50,6 +50,7 @@ function insertarRuta(ruta){
     let tabla = document.getElementById("table_inicial");
     let tr = document.createElement("tr");
     tr.setAttribute("tipo", ruta.Id_Tipo);
+    tr.setAttribute("table-id", ruta.id);
     let Localizacion = document.createElement('th')
     let Mote_1 = document.createElement('th')
     let Pokemon_1 = document.createElement('th')
@@ -67,9 +68,11 @@ function insertarRuta(ruta){
     Mote_1.innerHTML = ruta.Mote_1;
     Pokemon_1.innerHTML = ruta.Pokemon_1;
     Tipo_1.innerHTML = ruta.Tipo_1;
+    Tipo_1.setAttribute("id", ruta.Tipo_1)
     Mote_2.innerHTML = ruta.Mote_2;
     Pokemon_2.innerHTML = ruta.Pokemon_2;
     Tipo_2.innerHTML = ruta.Tipo_2;
+    Tipo_2.setAttribute("id", ruta.Tipo_2)
     Combinacion.innerHTML = ruta.Id_Tipo;
     tr.appendChild(Localizacion);
     tr.appendChild(Mote_1);
@@ -101,4 +104,22 @@ async function mostrarRutas(){
             console.log(error);
         }
     })
+}
+
+//funcion que guarda un equipo y lo abre en otra página
+function getTeam(){
+    let table = document.getElementById("table_inicial");
+    let filas = table.getElementsByTagName("tr");
+    let uri = "";
+    for(let i= 1; i<filas.length; i++){
+        let check = filas[i].getElementsByTagName("input")[0];
+        if(check.checked){
+            let ruta = filas[i].getAttribute("table-id");
+            uri += ruta + "_";
+        }
+    }
+    if(uri != ""){
+        uri = uri.substring(0,uri.length-1);
+        window.open("/team.html?team="+uri);
+    }
 }
