@@ -15,6 +15,8 @@ function get_images_from_api(pokemon1, poke1, pokemon2, poke2){
     var api = 'https://pokeapi.co/api/v2/pokemon/';
     var p1m = pokemon1.toLowerCase();
     var p2m = pokemon2.toLowerCase();
+    var imagen_1 = document.createElement('img');
+    var imagen_2 = document.createElement('img');
     var imagen;
     try{
         fetch(api+p1m)
@@ -23,11 +25,13 @@ function get_images_from_api(pokemon1, poke1, pokemon2, poke2){
         .then(r => {
             if(r.sprites.front_default == null){
                 imagen= 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png';
-                poke1.setAttribute("src", imagen);
+                imagen_1.setAttribute("src", imagen);
+                poke1.appendChild(imagen_1);
             }
             else{
                 imagen = r.sprites.front_default;
-                poke1.setAttribute("src", imagen);
+                imagen_1.setAttribute("src", imagen);
+                poke1.appendChild(imagen_1);
             }
         });
         fetch(api+p2m)
@@ -35,11 +39,14 @@ function get_images_from_api(pokemon1, poke1, pokemon2, poke2){
         .then(r => {
             if(r.sprites.front_default == null){
                 imagen = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png';
-                poke2.setAttribute("src", imagen);
+                imagen_2.setAttribute("src", imagen);
+                poke2.appendChild(imagen_2);
             }
             else{
                 imagen = r.sprites.front_default;
-                poke2.setAttribute("src", imagen);
+                imagen_2.setAttribute("src", imagen);
+                poke2.appendChild(imagen_2);
+                
             }
         });
     }
@@ -93,6 +100,7 @@ function insertarPokemon(pokemon){
     tr.appendChild(separacion);
     tr.appendChild(poke2);
     tr.appendChild(mote2);
+    tabla.appendChild(tr);
 }
 
 function mostrarEquipo(){
@@ -117,4 +125,26 @@ function mostrarEquipo(){
             }
         })
     }
+    var tabla = document.getElementById("table_team");
+    var tr = document.createElement("tr");
+    var nombre_1 = document.createElement('th')
+    var nombre_2 = document.createElement('th')
+    var sprite_1 = document.createElement('th')
+    var sprite_2 = document.createElement('th')
+    var imagen_1 = document.createElement('img');
+    var imagen_2 = document.createElement('img');
+    var space = document.createElement('th');
+    imagen_1.setAttribute("src", 'https://play.pokemonshowdown.com/sprites/trainers/butler.png');
+    imagen_2.setAttribute("src", 'https://play.pokemonshowdown.com/sprites/trainers/crasherwake.png');
+    sprite_1.appendChild(imagen_1);
+    sprite_2.appendChild(imagen_2);
+    nombre_1.innerHTML = 'SrIncognito';
+    nombre_2.innerHTML = 'Jofainita';
+    tr.appendChild(sprite_2);
+    tr.appendChild(nombre_2);
+    tr.appendChild(space);
+    tr.appendChild(nombre_1);
+    tr.appendChild(sprite_1);
+    tabla.insertBefore(tr, tabla.childNodes[0]);
+
 }
